@@ -9,6 +9,7 @@ main() {
 		"󰖓  Disconnect"
 		"󰂰  Enable Bluetooth"
 		"󰂲  Disable Bluetooth"
+		"󰥉  Battery"
 		"󰖆  Show Devices"
 	)
 
@@ -89,6 +90,32 @@ main() {
 		*"Disable Bluetooth")
 			bluetoothctl power off 2>/dev/null
 			notify-send "Bluetooth" "Disabled" -i bluetooth -t 3000
+			;;
+		*"Battery")
+			local mac name pct icon lines=""
+			while read -r _ mac _; do
+				bluetoothctl info "$mac" | grep -q "Connected: yes" || continue
+				name=$(bluetoothctl info "$mac" | awk -F': ' '/Alias:/ {print $2}')
+				pct=$(bluetoothctl info "$mac" | awk -F'[()]' '/Battery Percentage/ {print $2}')
+				if [[ -z $pct ]]; then
+					lines+="󰂑  $name   n/a\n"
+					continue
+				fi
+				if   ((pct >= 90)); then icon="󰥈"
+				elif ((pct >= 60)); then icon="󰂀"
+				elif ((pct >= 30)); then icon="󰁾"
+				elif ((pct >= 10)); then icon="󰁻"
+				else icon="󰂃"
+				fi
+				lines+="$icon  $name   $pct%\n"
+			done < <(bluetoothctl devices Connected 2>/dev/null)
+
+			if [[ -z $lines ]]; then
+				rofi -e "No connected devices" -config ~/.config/rofi/config.rasi 2>/dev/null
+			else
+				printf "%b" "${lines%\\n}" | \
+					rofi -dmenu -p "󰥉 Battery" -config ~/.config/rofi/config.rasi -theme-str "window { width: 35%; }" 2>/dev/null
+			fi
 			;;
 		*"Show Devices")
 			local devices=$(bluetoothctl devices 2>/dev/null)

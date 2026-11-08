@@ -7,12 +7,12 @@
 		"format-off": "󰂲",
 		"format-on": "󰂰",
 		"format-connected": "󰂱",
-		// "format-connected-battery":
+		"format-connected-battery": "󰂱 {device_battery_percentage}%",
 		// "format-no-controller":
 		// "format-icons":
 		// "rotate":
 		"min-length": 2,
-		"max-length": 2,
+		"max-length": 6,
 		// "align":
 		// "justify":
 		"on-click": "~/.config/waybar/scripts/bluetooth-menu.sh",
