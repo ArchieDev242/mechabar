@@ -2,7 +2,7 @@
 	"clock#time": {
 		// "interval":
 		"format": "{:%H:%M}",
-		// "timezone":
+		"timezone": "Europe/Kyiv",
 		// "timezones":
 		// "locale":
 		"min-length": 5,
@@ -29,19 +29,19 @@
 	"clock#date": {
 		// "interval":
 		"format": "󰸗 {:%d-%m}",
-		// "timezone":
+		"timezone": "Europe/Kyiv",
 		// "timezones":
 		// "locale":
 		"min-length": 8,
 		"max-length": 8,
 		// "rotate":
-		// "on-click":
+		"on-click": "~/.config/waybar/scripts/calendar-menu.sh",
 		// "on-click-middle":
 		// "on-click-right":
 		// "on-scroll-up":
 		// "on-scroll-down":
 		// "smooth-scrolling-threshold":
-		// "tooltip":
+		"tooltip": true,
 		"tooltip-format": "{calendar}",
 		// "menu":
 		// "menu-file":
@@ -49,23 +49,17 @@
 		// "expand":
 		"calendar": {
 			"mode": "month",
-			"mode-mon-col": 6,
-			// "week-pos":
-			// "on-scroll":
+			"mode-mon-col": 3,
+			"weeks-pos": "left",
+			"on-scroll": 1,
+			"on-click-right": "mode",
 			"format": {
-				"months": "<span alpha='100%'><b>{}</b></span>",
-				"days": "<span alpha='90%'>{}</span>",
-				// "weeks":
-				"weekdays": "<span alpha='80%'><i>{}</i></span>",
-				"today": "<span alpha='100%'><b><u>{}</u></b></span>"
+				"months": "<span color='#cba6f7'><b>{}</b></span>",
+				"days": "<span color='#cdd6f4'><b>{}</b></span>",
+				"weeks": "<span color='#94e2d5'><b>W{}</b></span>",
+				"weekdays": "<span color='#f9e2af'><b>{}</b></span>",
+				"today": "<span color='#a6e3a1'><b><u>{}</u></b></span>"
 			}
-		},
-		"actions": {
-			"on-click": "mode"
-			// "on-click-middle":
-			// "on-click-right":
-			// "on-scroll-up":
-			// "on-scroll-down":
 		}
 	}
 }

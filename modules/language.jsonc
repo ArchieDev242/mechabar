@@ -1,0 +1,7 @@
+{
+	"sway/language": {
+		"format": "🌐 {}",
+		"max-length": 15,
+		"tooltip-format": "Keyboard: {long}"
+	}
+}

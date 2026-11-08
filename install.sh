@@ -2,13 +2,12 @@
 
 DEPS=(
 	"bluez"
-	"bluez-utils" # bluetoothctl
+	"bluez-tools" # bluetoothctl
 	"brightnessctl"
 	"fzf"
-	"networkmanager" # nmcli
-	"pacman-contrib" # checkupdates
+	"network-manager" # nmcli
+	"apt-show-versions" # checkupdates
 	"pipewire-pulse"
-	"otf-commit-mono-nerd"
 )
 
 ERRORS=0
@@ -24,16 +23,22 @@ cprintf() {
 }
 
 main() {
+	cprintf blue "Updating packages..."
+	sudo apt update
+
 	cprintf blue "Installing dependencies..."
 
 	local d
 	for d in "${DEPS[@]}"; do
-		if pacman -Qi "$d" > /dev/null; then
+
+		# is package installed ??
+
+		if dpkg -l | grep -q "^i1 $d"; then
 			cprintf green "[/] $d"
 		else
 			printf "[ ] %s...\n" "$d"
 
-			if sudo pacman -S --noconfirm "$d"; then
+			if sudo apt install -y "$d" 2>/dev/null; then
 				cprintf green "[+] $d"
 			else
 				cprintf red "[x] $d"

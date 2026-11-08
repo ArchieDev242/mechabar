@@ -40,14 +40,14 @@ check_state() {
 			done
 
 			if [[ $new_state != "on" ]]; then
-				notify-send "Bluetooth" "Failed to unblock" -i "package-purge"
+				notify-send "Bluetooth" "Failed to unblock" -i "package-purge" -t 4000
 				exit 1
 			fi
 			;;
 		*) return 0 ;;
 	esac
 
-	notify-send "Bluetooth On" -i "network-bluetooth-activated" \
+	notify-send "Bluetooth On" -i "network-bluetooth-activated" -t 3000 \
 		-h string:x-canonical-private-synchronous:bluetooth
 }
 
@@ -71,7 +71,7 @@ get_devices() {
 
 	LIST=$(bluetoothctl devices | sed "s/^Device //")
 	if [[ -z $LIST ]]; then
-		notify-send "Bluetooth" "No devices found" -i "package-broken"
+		notify-send "Bluetooth" "No devices found" -i "package-broken" -t 3000
 		exit 1
 	fi
 }
@@ -99,7 +99,7 @@ select_device() {
 	connected=$(bluetoothctl info "$ADDRESS" | awk '/Connected/ {print $2}')
 
 	if [[ $connected == "yes" ]]; then
-		notify-send "Bluetooth" "Already connected to this device" \
+		notify-send "Bluetooth" "Already connected to this device" -t 3000 \
 			-i "package-install"
 		exit 1
 	fi
@@ -113,7 +113,7 @@ pair_and_connect() {
 		printf "Pairing..."
 
 		if ! timeout $TIMEOUT bluetoothctl pair "$ADDRESS" > /dev/null; then
-			notify-send "Bluetooth" "Failed to pair" -i "package-purge"
+			notify-send "Bluetooth" "Failed to pair" -i "package-purge" -t 4000
 			exit 1
 		fi
 	fi
@@ -121,11 +121,11 @@ pair_and_connect() {
 	printf "\nConnecting..."
 
 	if ! timeout $TIMEOUT bluetoothctl connect "$ADDRESS" > /dev/null; then
-		notify-send "Bluetooth" "Failed to connect" -i "package-purge"
+		notify-send "Bluetooth" "Failed to connect" -i "package-purge" -t 4000
 		exit 1
 	fi
 
-	notify-send "Bluetooth" "Successfully connected" -i "package-install"
+	notify-send "Bluetooth" "Successfully connected" -i "package-install" -t 3000
 }
 
 main() {

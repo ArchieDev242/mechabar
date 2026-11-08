@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Launch a power menu
+# Launch a power menu with rofi
 #
-# Requirement: fzf
+# Requirement: rofi
 #
 # Author:  Jesse Mirabel <sejjymvm@gmail.com>
 # Date:    August 19, 2025
@@ -11,33 +11,23 @@
 main() {
 	local list=(
 		"Lock"
-		"Shutdown"
-		"Reboot"
-		"Logout"
-		"Hibernate"
 		"Suspend"
-	)
-
-	local options=(
-		"--border=sharp"
-		"--border-label= Power Menu "
-		"--height=~100%"
-		"--highlight-line"
-		"--no-input"
-		"--pointer="
-		"--reverse"
+		"Hibernate"
+		"Logout"
+		"Reboot"
+		"Shutdown"
 	)
 
 	local selected
-	selected=$(printf "%s\n" "${list[@]}" | fzf "${options[@]}")
+	selected=$(printf "%s\n" "${list[@]}" | rofi -dmenu -p "󰤄 Power Menu" -config ~/.config/rofi/config.rasi -theme-str 'window {width: 30%;}')
 
 	case $selected in
 		"Lock")      loginctl lock-session ;;
-		"Shutdown")  systemctl poweroff ;;
-		"Reboot")    systemctl reboot ;;
-		"Logout")    loginctl terminate-session "$XDG_SESSION_ID" ;;
-		"Hibernate") systemctl hibernate ;;
 		"Suspend")   systemctl suspend ;;
+		"Hibernate") systemctl hibernate ;;
+		"Logout")    loginctl terminate-session "$XDG_SESSION_ID" ;;
+		"Reboot")    systemctl reboot ;;
+		"Shutdown")  systemctl poweroff ;;
 		*)           exit 1 ;;
 	esac
 }

@@ -3,14 +3,14 @@
 # Adjust default device volume and send a notification with the current level
 #
 # Requirements:
-# - pactl (libpulse)
+# - wpctl (WirePlumber) or pactl (libpulse)
 # - notify-send (libnotify)
 #
 # Author:  Jesse Mirabel <sejjymvm@gmail.com>
 # Date:    September 07, 2025
 # License: MIT
 
-DEF_VALUE=1
+DEF_VALUE=5
 MIN=0
 MAX=100
 
@@ -33,8 +33,8 @@ usage() {
 		Adjust default device volume and send a notification with the current level
 
 		DEVICE:
-		  input            Use "@DEFAULT_SOURCE@" (microphone)
-		  output           Use "@DEFAULT_SINK@" (speaker/headphones)
+		  input            Use "@DEFAULT_AUDIO_SOURCE@" (microphone)
+		  output           Use "@DEFAULT_AUDIO_SINK@" (speaker/headphones)
 
 		OPTIONS:
 		  mute             Toggle device mute
@@ -53,29 +53,63 @@ usage() {
 	EOF
 }
 
-pactl() {
-	command pactl "$1" "$DEV_DEF" "${@:2}"
+# Use wpctl if available (PipeWire), else pactl (PulseAudio)
+if command -v wpctl >/dev/null && wpctl status 2>/dev/null | grep -q "Audio"; then
+	AUDIO_BACKEND="wpctl"
+else
+	AUDIO_BACKEND="pactl"
+fi
+
+get_volume() {
+	if [[ $AUDIO_BACKEND == "wpctl" ]]; then
+		wpctl get-volume "$DEV_DEF" | awk '{printf "%.0f", $2*100}'
+	else
+		pactl get-sink-volume "$DEV_DEF" 2>/dev/null | awk '{print $5}' | tr -d "%" || \
+		pactl get-source-volume "$DEV_DEF" 2>/dev/null | awk '{print $5}' | tr -d "%"
+	fi
+}
+
+get_mute() {
+	if [[ $AUDIO_BACKEND == "wpctl" ]]; then
+		wpctl get-volume "$DEV_DEF" | grep -q "MUTED" && echo "yes" || echo "no"
+	else
+		pactl get-sink-mute "$DEV_DEF" 2>/dev/null | awk '{print $2}' || \
+		pactl get-source-mute "$DEV_DEF" 2>/dev/null | awk '{print $2}'
+	fi
+}
+
+set_volume() {
+	local new_level=$1
+	if [[ $AUDIO_BACKEND == "wpctl" ]]; then
+		wpctl set-volume "$DEV_DEF" "${new_level}%"
+	else
+		pactl set-sink-volume "$DEV_DEF" "${new_level}%" 2>/dev/null || \
+		pactl set-source-volume "$DEV_DEF" "${new_level}%"
+	fi
+}
+
+set_mute() {
+	if [[ $AUDIO_BACKEND == "wpctl" ]]; then
+		wpctl set-mute "$DEV_DEF" toggle
+	else
+		pactl set-sink-mute "$DEV_DEF" toggle 2>/dev/null || \
+		pactl set-source-mute "$DEV_DEF" toggle
+	fi
 }
 
 get_state() {
 	local state
-	state=$(pactl "get-$DEV_STATE" | awk '{print $2}')
-
+	state=$(get_mute)
 	case $state in
 		"yes") printf "Muted" ;;
 		"no")  printf "Unmuted" ;;
 	esac
 }
 
-get_volume() {
-	pactl "get-$DEV_VOLUME" | awk '{print $5}' | tr -d "%"
-}
-
 get_icon() {
 	local state level
 	state=$(get_state)
 	level=$(get_volume)
-
 	local new_level=${1:-$level}
 
 	if [[ $state == "Muted" ]]; then
@@ -91,40 +125,11 @@ get_icon() {
 	fi
 }
 
-set_state() {
-	pactl "set-$DEV_STATE" toggle
-
-	local state icon
-	state=$(get_state)
-	icon=$(get_icon)
-
-	notify-send "$DEV_NAME: $state" -i "$icon" \
-		-h string:x-canonical-private-synchronous:volume
-}
-
-set_volume() {
-	local level
-	level=$(get_volume)
-
-	local new_level
-
-	case $ACTION in
-		"raise")
-			new_level=$((level + VALUE))
-			((new_level > MAX)) && new_level=$MAX
-			;;
-		"lower")
-			new_level=$((level - VALUE))
-			((new_level < MIN)) && new_level=$MIN
-			;;
-	esac
-
-	pactl "set-$DEV_VOLUME" "$new_level%"
-
-	local icon
-	icon=$(get_icon $new_level)
-
-	notify-send "$DEV_NAME: $new_level%" -h int:value:$new_level -i "$icon" \
+notify() {
+	local text=$1
+	local value=$2
+	local icon=$(get_icon $value)
+	notify-send "$DEV_NAME: $text" -h int:value:$value -i "$icon" -t 1500 \
 		-h string:x-canonical-private-synchronous:volume
 }
 
@@ -140,16 +145,12 @@ main() {
 
 	case $DEVICE in
 		"input")
-			DEV_DEF="@DEFAULT_SOURCE@"
-			DEV_STATE="source-mute"
-			DEV_VOLUME="source-volume"
+			DEV_DEF="@DEFAULT_AUDIO_SOURCE@"
 			DEV_ICON="mic-volume"
 			DEV_NAME="Microphone"
 			;;
 		"output")
-			DEV_DEF="@DEFAULT_SINK@"
-			DEV_STATE="sink-mute"
-			DEV_VOLUME="sink-volume"
+			DEV_DEF="@DEFAULT_AUDIO_SINK@"
 			DEV_ICON="audio-volume"
 			DEV_NAME="Volume"
 			;;
@@ -157,9 +158,29 @@ main() {
 	esac
 
 	case $ACTION in
-		"mute")            set_state ;;
-		"raise" | "lower") set_volume ;;
-		*)                 usage >&2; return 1 ;;
+		"mute")
+			set_mute
+			local state
+			state=$(get_state)
+			notify "$state" $(get_volume)
+			;;
+		"raise")
+			local level new_level
+			level=$(get_volume)
+			new_level=$((level + VALUE))
+			((new_level > MAX)) && new_level=$MAX
+			set_volume "$new_level"
+			notify "$new_level%" "$new_level"
+			;;
+		"lower")
+			local level new_level
+			level=$(get_volume)
+			new_level=$((level - VALUE))
+			((new_level < MIN)) && new_level=$MIN
+			set_volume "$new_level"
+			notify "$new_level%" "$new_level"
+			;;
+		*) usage >&2; return 1 ;;
 	esac
 }
 
