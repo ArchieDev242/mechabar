@@ -157,6 +157,15 @@ main() {
 		*) usage >&2; return 1 ;;
 	esac
 
+	# Show device name in notification (e.g. USB or Bluetooth headset)
+	if [[ $AUDIO_BACKEND == "wpctl" ]]; then
+		local desc
+		desc=$(wpctl inspect "$DEV_DEF" 2>/dev/null | awk -F'"' '/node.description/ {print $2; exit}')
+		if [[ -n $desc ]]; then
+			[[ $DEVICE == "input" ]] && DEV_NAME="$desc (mic)" || DEV_NAME="$desc"
+		fi
+	fi
+
 	case $ACTION in
 		"mute")
 			set_mute

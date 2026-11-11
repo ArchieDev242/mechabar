@@ -1,7 +1,8 @@
 {
 	"include": [
 		"~/.config/waybar/modules/*.jsonc",
-		"~/.config/waybar/modules/custom/*.jsonc"
+		"~/.config/waybar/modules/custom/*.jsonc",
+		"~/.config/waybar/modules/extras/tray.jsonc"
 
 		// modules that are not included by default:
 		// "~/.config/waybar/modules/extras/*.jsonc"
@@ -35,8 +36,8 @@
 		"clock#date",
 		"custom/right_div#4",
 		"network",
-		"custom/left_div#9",
 		"bluetooth",
+		"tray",
 		"custom/system_update",
 		"custom/right_div#5"
 	],

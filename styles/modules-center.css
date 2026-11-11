@@ -101,13 +101,16 @@
 	background-color: @tray;
 	padding: 0 6px 0 4px;
 }
-#custom-left_div.9 {
-	background-color: @tray;
-	color: @volume;
-}
 #bluetooth {
 	background-color: @tray;
 	padding: 0 5px;
+}
+#tray {
+	background-color: @tray;
+	padding: 0 6px;
+}
+#tray > .needs-attention {
+	background-color: @warning;
 }
 #custom-system_update {
 	background-color: @tray;

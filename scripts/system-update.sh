@@ -25,11 +25,10 @@ cprintf() {
 check_updates() {
 	local apt_output apt_status
 	
-	# Update package list silently
-	sudo apt-get update -qq 2>/dev/null
-	
+	# Package lists are refreshed by apt-daily.timer (root), no sudo here
 	# Get upgradable packages
-	apt_output=$(apt list --upgradable 2>/dev/null | grep -v "Listing")
+	# status of apt itself, not grep (grep exits 1 when there are 0 updates)
+	apt_output=$(apt list --upgradable 2>/dev/null)
 	apt_status=$?
 
 	if ((apt_status != 0)); then
@@ -37,7 +36,7 @@ check_updates() {
 		return 1
 	fi
 
-	APT_UPD=$(grep -cve "^\s*$" <<< "$apt_output")
+	APT_UPD=$(grep -c "upgradable from" <<< "$apt_output")
 }
 
 update_packages() {
